@@ -37,7 +37,7 @@ export async function POST(req: Request) {
   try {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let payload: any = JSON.parse(rawBody);
+    const payload: any = JSON.parse(rawBody);
     console.log(payload);
   } catch (err) {
     console.error("Error parsing JSON:", err);
