@@ -8,7 +8,7 @@ import { Webhook } from "svix";
 import { buffer } from "micro";
 import { createUser, deleteUser, updateUser } from "@/lib/actions/user.actions";
 
-export async function POST(req: Request, res: Response) {
+export async function POST(req: Request) {
   try {
     // Retrieve the webhook secret from environment variables
     const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
