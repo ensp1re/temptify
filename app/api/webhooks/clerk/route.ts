@@ -5,7 +5,7 @@ import { clerkClient } from "@clerk/nextjs/server";
 import { WebhookEvent } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { Webhook } from "svix";
+import { Webhook, WebhookRequiredHeaders } from "svix";
 
 import { createUser, deleteUser, updateUser } from "@/lib/actions/user.actions";
 
@@ -35,21 +35,11 @@ export async function POST(req: Request) {
 
     // Get the body of the request
     let payload = {};
-    let body: string;
     payload = await req.json();
     console.log(payload);
-    body = JSON.stringify(payload);
+    const body = Buffer.from(JSON.stringify(payload), 'utf-8');
     console.log(body);
 
-    // Debugging: Log headers and body
-    console.log("Raw Headers:", {
-      svix_id,
-      svix_timestamp,
-      svix_signature,
-    });
-    console.log("Received Body:", body);
-
-    // Initialize the Svix Webhook instance
     const wh = new Webhook(WEBHOOK_SECRET);
     console.log(wh);
     let evt: WebhookEvent;
@@ -58,7 +48,7 @@ export async function POST(req: Request) {
       "svix-id": svix_id,
       "svix-timestamp": svix_timestamp,
       "svix-signature": svix_signature,
-    }) as WebhookEvent;
+    } as WebhookRequiredHeaders) as WebhookEvent;
 
     console.log("Webhook Event", evt);
 
