@@ -3,30 +3,26 @@
 
 import { clerkClient } from "@clerk/nextjs/server";
 import { WebhookEvent } from "@clerk/nextjs/server";
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { Webhook, WebhookRequiredHeaders } from "svix";
-
+import { Webhook } from "svix";
+import { buffer } from "micro";
 import { createUser, deleteUser, updateUser } from "@/lib/actions/user.actions";
 
-export async function POST(req: Request) {
+export async function POST(req: Request, res: Response) {
   try {
     // Retrieve the webhook secret from environment variables
     const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
-    console.log(WEBHOOK_SECRET);
 
-    // Check if the secret is defined
     if (!WEBHOOK_SECRET) {
       throw new Error(
         "Please add WEBHOOK_SECRET from Clerk Dashboard to .env or .env.local"
       );
     }
 
-    // Retrieve headers
-    const headerPayload = headers();
-    const svix_id = headerPayload.get("svix-id");
-    const svix_timestamp = headerPayload.get("svix-timestamp");
-    const svix_signature = headerPayload.get("svix-signature");
+    // Get the Svix headers for verification
+    const svix_id = req.headers.get("svix-id") as string;
+    const svix_timestamp = req.headers.get("svix-timestamp") as string;
+    const svix_signature = req.headers.get("svix-signature") as string;
 
     // Validate headers
     if (!svix_id || !svix_timestamp || !svix_signature) {
@@ -34,21 +30,23 @@ export async function POST(req: Request) {
     }
 
     // Get the body of the request
-    let payload = {};
+    let payload;
     payload = await req.json();
-    console.log(payload);
-    const body = Buffer.from(JSON.stringify(payload), 'utf-8');
-    console.log(body);
+    const body = (await buffer(payload)).toString();
 
     const wh = new Webhook(WEBHOOK_SECRET);
-    console.log(wh);
     let evt: WebhookEvent;
 
-    evt = wh.verify(body, {
-      "svix-id": svix_id,
-      "svix-timestamp": svix_timestamp,
-      "svix-signature": svix_signature,
-    } as WebhookRequiredHeaders) as WebhookEvent;
+    try {
+      evt = wh.verify(body, {
+        "svix-id": svix_id,
+        "svix-timestamp": svix_timestamp,
+        "svix-signature": svix_signature,
+      }) as WebhookEvent;
+    } catch (err) {
+      console.error("Error verifying webhook:", err);
+      return NextResponse.json({ Error: err });
+    }
 
     console.log("Webhook Event", evt);
 
