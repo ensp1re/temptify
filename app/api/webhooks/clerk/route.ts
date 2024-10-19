@@ -1,5 +1,3 @@
-/* eslint-disable camelcase */
-/*  */
 import { clerkClient } from "@clerk/nextjs/server";
 import { WebhookEvent } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
@@ -9,42 +7,51 @@ import { Webhook } from "svix";
 import { createUser, deleteUser, updateUser } from "@/lib/actions/user.actions";
 
 export async function POST(req: Request) {
-  // You can find this in the Clerk Dashboard -> Webhooks -> choose the webhook
+  // Retrieve the webhook secret from environment variables
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 
+  // Check if the secret is defined
   if (!WEBHOOK_SECRET) {
     throw new Error(
       "Please add WEBHOOK_SECRET from Clerk Dashboard to .env or .env.local"
     );
   }
 
-  // Get the headers
+  // Retrieve headers
   const headerPayload = headers();
   const svix_id = headerPayload.get("svix-id");
   const svix_timestamp = headerPayload.get("svix-timestamp");
   const svix_signature = headerPayload.get("svix-signature");
 
-  // If there are no headers, error out
+  // Validate headers
   if (!svix_id || !svix_timestamp || !svix_signature) {
-    return new Response("Error occured -- no svix headers", {
-      status: 400,
-    });
+    return new Response("Error occurred -- no svix headers", { status: 400 });
   }
 
-  // Get the body
-  const payload = await req.json();
-  const body = JSON.stringify(payload);
+  // Get the body of the request
 
-  // Create a new Svix instance with your secret.
-  const wh = new Webhook(WEBHOOK_SECRET);
-  console.log("WEBHOOK_SECRET:", WEBHOOK_SECRET);
-  console.log("Received Payload:", body);
-  console.log("Received Headers:", {
+  let payload = {};
+  let body: string;
+  try {
+    payload = await req.json();
+    console.log(payload);
+    body = JSON.stringify(payload);
+    console.log(body);
+  } catch (error) {
+    
+    return new Response(`Error occurred -- no body ${error}`, { status: 400 });
+  }
+
+  // Debugging: Log headers and body
+  console.log("Raw Headers:", {
     svix_id,
     svix_timestamp,
     svix_signature,
   });
+  console.log("Received Body:", body);
 
+  // Initialize the Svix Webhook instance
+  const wh = new Webhook(WEBHOOK_SECRET);
   let evt: WebhookEvent;
 
   // Verify the payload with the headers
@@ -54,19 +61,18 @@ export async function POST(req: Request) {
       "svix-timestamp": svix_timestamp,
       "svix-signature": svix_signature,
     }) as WebhookEvent;
-
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-  } catch (err: any) {
-    console.error("Error verifying webhook:", err.message);
-    return new Response("Error occurred", {
-      status: 400,
-    });
+  } catch (err) {
+    console.error("Error verifying webhook:", err!);
+    console.error("Signature:", svix_signature);
+    console.error("Payload:", body);
+    return new Response("Error occurred during verification", { status: 400 });
   }
 
   // Get the ID and type
   const { id } = evt.data;
   const eventType = evt.type;
 
+  // Handle event types (create, update, delete) accordingly
   // CREATE
   if (eventType === "user.created") {
     const { id, email_addresses, image_url, first_name, last_name, username } =
@@ -107,20 +113,17 @@ export async function POST(req: Request) {
     };
 
     const updatedUser = await updateUser(id, user);
-
     return NextResponse.json({ message: "OK", user: updatedUser });
   }
 
   // DELETE
   if (eventType === "user.deleted") {
     const { id } = evt.data;
-
     const deletedUser = await deleteUser(id!);
-
     return NextResponse.json({ message: "OK", user: deletedUser });
   }
 
-  console.log(`Webhook with and ID of ${id} and type of ${eventType}`);
+  console.log(`Webhook with ID: ${id} and type: ${eventType}`);
   console.log("Webhook body:", body);
 
   return new Response("", { status: 200 });
