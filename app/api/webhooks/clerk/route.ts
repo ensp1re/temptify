@@ -1,4 +1,5 @@
 /* eslint-disable camelcase */
+/*  */
 import { clerkClient } from "@clerk/nextjs/server";
 import { WebhookEvent } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
@@ -36,6 +37,13 @@ export async function POST(req: Request) {
 
   // Create a new Svix instance with your secret.
   const wh = new Webhook(WEBHOOK_SECRET);
+  console.log("WEBHOOK_SECRET:", WEBHOOK_SECRET);
+  console.log("Received Payload:", body);
+  console.log("Received Headers:", {
+    svix_id,
+    svix_timestamp,
+    svix_signature,
+  });
 
   let evt: WebhookEvent;
 
@@ -46,9 +54,11 @@ export async function POST(req: Request) {
       "svix-timestamp": svix_timestamp,
       "svix-signature": svix_signature,
     }) as WebhookEvent;
-  } catch (err) {
-    console.error("Error verifying webhook:", err);
-    return new Response("Error occured", {
+
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+  } catch (err: any) {
+    console.error("Error verifying webhook:", err.message);
+    return new Response("Error occurred", {
       status: 400,
     });
   }
