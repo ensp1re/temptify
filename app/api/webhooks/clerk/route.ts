@@ -34,9 +34,11 @@ export async function POST(req: Request) {
   console.log("Raw body:", rawBody);
 
   // Attempt to parse the JSON payload
-  let payload;
   try {
-    payload = JSON.parse(rawBody);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let payload: any = JSON.parse(rawBody);
+    console.log(payload);
   } catch (err) {
     console.error("Error parsing JSON:", err);
     return new Response("Invalid JSON", { status: 400 });
