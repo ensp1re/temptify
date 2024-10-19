@@ -9,6 +9,7 @@ import { createUser, deleteUser, updateUser } from "@/lib/actions/user.actions";
 export async function POST(req: Request) {
   // Retrieve the webhook secret from environment variables
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+  console.log(WEBHOOK_SECRET);
 
   // Check if the secret is defined
   if (!WEBHOOK_SECRET) {
@@ -38,7 +39,6 @@ export async function POST(req: Request) {
     body = JSON.stringify(payload);
     console.log(body);
   } catch (error) {
-    
     return new Response(`Error occurred -- no body ${error}`, { status: 400 });
   }
 
@@ -50,9 +50,19 @@ export async function POST(req: Request) {
   });
   console.log("Received Body:", body);
 
-  // Initialize the Svix Webhook instance
-  const wh = new Webhook(WEBHOOK_SECRET);
+  let wh: Webhook;
   let evt: WebhookEvent;
+
+  // Initialize the Svix Webhook instance
+  try {
+    console.log(WEBHOOK_SECRET);
+    wh = new Webhook(WEBHOOK_SECRET);
+    console.log(wh);
+  } catch (error) {
+    return new Response(`Error occurred -- no webhook ${error}`, {
+      status: 400,
+    });
+  }
 
   // Verify the payload with the headers
   try {
@@ -62,10 +72,16 @@ export async function POST(req: Request) {
       "svix-signature": svix_signature,
     }) as WebhookEvent;
   } catch (err) {
-    console.error("Error verifying webhook:", err!);
-    console.error("Signature:", svix_signature);
-    console.error("Payload:", body);
-    return new Response("Error occurred during verification", { status: 400 });
+    console.error("Error verifying webhook:", err);
+    console.error("Payload body:", body); // Log the body for debugging
+    console.error("Headers:", {
+      "svix-id": svix_id,
+      "svix-timestamp": svix_timestamp,
+      "svix-signature": svix_signature,
+    });
+    return new Response("Error occurred", {
+      status: 400,
+    });
   }
 
   // Get the ID and type
@@ -87,6 +103,7 @@ export async function POST(req: Request) {
       photo: image_url,
     };
 
+    console.log("User", user);
     const newUser = await createUser(user);
 
     // Set public metadata
