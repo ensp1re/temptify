@@ -38,8 +38,6 @@ export async function POST(req: Request) {
     const wh = new Webhook(WEBHOOK_SECRET);
     let evt: WebhookEvent;
 
-    console.log("Webhook body", body);
-
     try {
       evt = wh.verify(body, {
         "svix-id": svix_id,
@@ -59,9 +57,6 @@ export async function POST(req: Request) {
     // Get the ID and type
     const { id } = evt.data;
     const eventType = evt.type;
-
-    console.log("Webhook ID", id);
-    console.log("Webhook Type", eventType);
 
     // Handle event types (create, update, delete) accordingly
     if (eventType === "user.created") {
