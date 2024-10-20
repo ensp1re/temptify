@@ -1,16 +1,12 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-/* eslint-disable prefer-const */
-
 import { WebhookEvent, clerkClient } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
 import { Webhook } from "svix";
 import { buffer } from "micro";
 import { createUser, deleteUser, updateUser } from "@/lib/actions/user.actions";
 import { headers } from "next/headers";
-import { NextApiRequest } from "next";
 
-export async function POST(req: NextApiRequest) {
+export async function POST(req: Request) {
   try {
+    // Ensure it's a POST request
     if (req.method !== "POST") {
       return new Response("Method Not Allowed", { status: 405 });
     }
@@ -36,7 +32,8 @@ export async function POST(req: NextApiRequest) {
     }
 
     // Get the body of the request
-    const body = (await buffer(req)).toString();
+    const rawBody = await req.arrayBuffer();
+    const body = (buffer(rawBody) as unknown) as string;
 
     const wh = new Webhook(WEBHOOK_SECRET);
     let evt: WebhookEvent;
@@ -49,7 +46,7 @@ export async function POST(req: NextApiRequest) {
       }) as WebhookEvent;
     } catch (err) {
       console.error("Error verifying webhook:", err);
-      return NextResponse.json({ Error: err });
+      return new Response(JSON.stringify({ message: "Invalid webhook signature" }), { status: 400 });
     }
 
     console.log("Webhook Event", evt);
@@ -59,7 +56,6 @@ export async function POST(req: NextApiRequest) {
     const eventType = evt.type;
 
     // Handle event types (create, update, delete) accordingly
-    // CREATE
     if (eventType === "user.created") {
       const {
         id,
@@ -79,10 +75,8 @@ export async function POST(req: NextApiRequest) {
         photo: image_url,
       };
 
-      console.log("User", user);
       const newUser = await createUser(user);
 
-      // Set public metadata
       if (newUser) {
         await clerkClient.users.updateUserMetadata(id, {
           publicMetadata: {
@@ -91,10 +85,9 @@ export async function POST(req: NextApiRequest) {
         });
       }
 
-      return NextResponse.json({ message: "OK", user: newUser });
+      return new Response(JSON.stringify({ message: "OK", user: newUser }), { status: 200 });
     }
 
-    // UPDATE
     if (eventType === "user.updated") {
       const { id, image_url, first_name, last_name, username } = evt.data;
 
@@ -106,14 +99,13 @@ export async function POST(req: NextApiRequest) {
       };
 
       const updatedUser = await updateUser(id, user);
-      return NextResponse.json({ message: "OK", user: updatedUser });
+      return new Response(JSON.stringify({ message: "OK", user: updatedUser }), { status: 200 });
     }
 
-    // DELETE
     if (eventType === "user.deleted") {
       const { id } = evt.data;
       const deletedUser = await deleteUser(id!);
-      return NextResponse.json({ message: "OK", user: deletedUser });
+      return new Response(JSON.stringify({ message: "OK", user: deletedUser }), { status: 200 });
     }
 
     console.log(`Webhook with ID: ${id} and type: ${eventType}`);
