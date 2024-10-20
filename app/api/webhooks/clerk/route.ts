@@ -1,6 +1,6 @@
 import { WebhookEvent, clerkClient } from "@clerk/nextjs/server";
 import { Webhook } from "svix";
-import { buffer } from "micro";
+// import { buffer } from "micro";
 import { createUser, deleteUser, updateUser } from "@/lib/actions/user.actions";
 import { headers } from "next/headers";
 
@@ -32,8 +32,7 @@ export async function POST(req: Request) {
     }
 
     // Get the body of the request
-    const rawBody = await req.arrayBuffer();
-    const body = (buffer(rawBody) as unknown) as string;
+    const body = (await req.text()).toString();
 
     const wh = new Webhook(WEBHOOK_SECRET);
     let evt: WebhookEvent;
@@ -46,7 +45,10 @@ export async function POST(req: Request) {
       }) as WebhookEvent;
     } catch (err) {
       console.error("Error verifying webhook:", err);
-      return new Response(JSON.stringify({ message: "Invalid webhook signature" }), { status: 400 });
+      return new Response(
+        JSON.stringify({ message: "Invalid webhook signature" }),
+        { status: 400 }
+      );
     }
 
     console.log("Webhook Event", evt);
@@ -85,7 +87,9 @@ export async function POST(req: Request) {
         });
       }
 
-      return new Response(JSON.stringify({ message: "OK", user: newUser }), { status: 200 });
+      return new Response(JSON.stringify({ message: "OK", user: newUser }), {
+        status: 200,
+      });
     }
 
     if (eventType === "user.updated") {
@@ -99,13 +103,19 @@ export async function POST(req: Request) {
       };
 
       const updatedUser = await updateUser(id, user);
-      return new Response(JSON.stringify({ message: "OK", user: updatedUser }), { status: 200 });
+      return new Response(
+        JSON.stringify({ message: "OK", user: updatedUser }),
+        { status: 200 }
+      );
     }
 
     if (eventType === "user.deleted") {
       const { id } = evt.data;
       const deletedUser = await deleteUser(id!);
-      return new Response(JSON.stringify({ message: "OK", user: deletedUser }), { status: 200 });
+      return new Response(
+        JSON.stringify({ message: "OK", user: deletedUser }),
+        { status: 200 }
+      );
     }
 
     console.log(`Webhook with ID: ${id} and type: ${eventType}`);
