@@ -32,12 +32,14 @@ export async function POST(req: Request) {
       return new Response("Error occurred -- no svix headers", { status: 400 });
     }
 
-    const payload = await req.json();
+    const payload = (await req.json()) as Record<string, unknown>;
     const body = JSON.stringify(payload);
 
     const wh = new Webhook(WEBHOOK_SECRET);
     let evt: WebhookEvent;
 
+    console.log("Webhook body", body);
+    
     try {
       evt = wh.verify(body, {
         "svix-id": svix_id,
