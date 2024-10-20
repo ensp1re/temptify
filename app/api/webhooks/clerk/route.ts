@@ -5,7 +5,6 @@ import { clerkClient } from "@clerk/nextjs/server";
 import { WebhookEvent } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { Webhook } from "svix";
-import { buffer } from "micro";
 import { createUser, deleteUser, updateUser } from "@/lib/actions/user.actions";
 
 export async function POST(req: Request) {
@@ -29,10 +28,8 @@ export async function POST(req: Request) {
       return new Response("Error occurred -- no svix headers", { status: 400 });
     }
 
-    // Get the body of the request
-    let payload;
-    payload = await req.json();
-    const body = (await buffer(payload)).toString();
+    // Get the raw body of the request
+    const body = await req.text();
 
     const wh = new Webhook(WEBHOOK_SECRET);
     let evt: WebhookEvent;
