@@ -1,4 +1,3 @@
-
 /* eslint-disable */
 
 import { WebhookEvent, clerkClient } from "@clerk/nextjs/server";
@@ -33,12 +32,8 @@ export async function POST(req: Request) {
       return new Response("Error occurred -- no svix headers", { status: 400 });
     }
 
-    const rawBody = await req.arrayBuffer();
-
-    const buffer = Buffer.from(rawBody);
-
-    const body = buffer.toString('base64');
-
+    const payload = await req.json();
+    const body = JSON.stringify(payload);
 
     const wh = new Webhook(WEBHOOK_SECRET);
     let evt: WebhookEvent;
