@@ -34,7 +34,10 @@ export async function POST(req: Request) {
     }
 
     const rawBody = await req.arrayBuffer();
-    const body = Buffer.from(rawBody).toString();
+
+    const buffer = Buffer.from(rawBody);
+
+    const body = buffer.toString('base64');
 
 
     const wh = new Webhook(WEBHOOK_SECRET);
