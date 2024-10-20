@@ -1,16 +1,20 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable prefer-const */
 
-import { clerkClient } from "@clerk/nextjs/server";
-import { WebhookEvent } from "@clerk/nextjs/server";
+import { WebhookEvent, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { Webhook } from "svix";
 import { buffer } from "micro";
 import { createUser, deleteUser, updateUser } from "@/lib/actions/user.actions";
 import { headers } from "next/headers";
+import { NextApiRequest } from "next";
 
-export async function POST(req: Request) {
+export async function POST(req: NextApiRequest) {
   try {
+    if (req.method !== "POST") {
+      return new Response("Method Not Allowed", { status: 405 });
+    }
+
     // Retrieve the webhook secret from environment variables
     const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 
@@ -32,9 +36,7 @@ export async function POST(req: Request) {
     }
 
     // Get the body of the request
-    let payload;
-    payload = await req.json();
-    const body = (await buffer(payload)).toString();
+    const body = (await buffer(req)).toString();
 
     const wh = new Webhook(WEBHOOK_SECRET);
     let evt: WebhookEvent;
