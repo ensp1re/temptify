@@ -10,6 +10,8 @@ import { updateCredits } from "./user.actions";
 export const checkoutCredits = async (
   transaction: CheckoutTransactionParams
 ) => {
+
+
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
   const amount: number = Number(transaction.amount) * 100;
@@ -33,9 +35,10 @@ export const checkoutCredits = async (
       buyerId: transaction.buyerId,
     },
     mode: "payment",
-    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/profile`,
-    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/`,
+    success_url: `${process.env.NEXT_PUBLIC_BASE_URL!}/profile`,
+    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL!}/`,
   });
+
 
   if (session.url) {
     redirect(session.url);
@@ -50,10 +53,13 @@ export const createTransaction = async (
   try {
     await connectToDatabase();
 
+
     const newTransaction = await Transaction.create({
       ...transaction,
       buyer: transaction.buyerId,
     });
+
+    console.log("newTransaction", newTransaction);
 
     await updateCredits(transaction.buyerId, transaction.credits);
 
