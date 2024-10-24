@@ -77,14 +77,8 @@ export async function deleteUser(clerkId: string) {
 export async function updateCredits(userId: string, creditFee: number) {
   try {
     await connectToDatabase();
-
-    const user = await getUserById(userId);
-
-
-    if (user?.creditBalance < creditFee) {
-      throw new Error("Insufficient credits");
-    }
    
+    console.log(userId)
 
     const updatedUserCredits = await User.findOneAndUpdate(
       { _id: userId },
