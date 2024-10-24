@@ -1,3 +1,10 @@
+export interface INavLink {
+  label: string;
+  route: string;
+  icon: string;
+}
+
+
 export const navLinks = [
     {
       label: "Home",

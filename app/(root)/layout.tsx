@@ -1,5 +1,6 @@
 import MobileNav from "@/components/shared/MobileNav";
 import Sidebar from "@/components/shared/Sidebar";
+import { Toaster } from "@/components/ui/toaster";
 import React, { FC } from "react";
 
 interface LayoutProps {
@@ -9,8 +10,9 @@ interface LayoutProps {
 const Layout: FC<LayoutProps> = ({ children }) => {
   return (
     <main className="root">
+      <Toaster />
       <Sidebar />
-      <MobileNav  />
+      <MobileNav />
       <div className="root-container">
         <div className="wrapper">{children}</div>
       </div>
