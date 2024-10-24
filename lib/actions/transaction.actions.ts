@@ -59,7 +59,6 @@ export const createTransaction = async (
       buyer: transaction.buyerId,
     });
 
-    console.log("newTransaction", newTransaction);
 
     await updateCredits(transaction.buyerId, transaction.credits);
 

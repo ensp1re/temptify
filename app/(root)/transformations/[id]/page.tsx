@@ -81,6 +81,7 @@ const ImageDetails = async ({ params: { id } }: SearchParamProps) => {
             title={image.title}
             isTransforming={false}
             transformationConfig={image.config}
+            hasDownload={true}
           />
         </div>
 
